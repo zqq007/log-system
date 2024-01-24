@@ -4,8 +4,7 @@
     3、获取文件当前路径
     4、创建目录
 */
-#ifndef __UTIL__
-#define __UTIL__
+#pragma once
 
 #include <iostream>
 #include <ctime>
@@ -64,5 +63,3 @@ namespace Log
         }
     };
 }
-
-#endif

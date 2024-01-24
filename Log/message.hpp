@@ -10,8 +10,7 @@
     7、线程id
 */
 
-#ifndef __M__MESSAGE_H__
-#define __M__MESSAGE_H__
+#pragma once
 
 #include <iostream>
 #include <string>
@@ -25,7 +24,7 @@ namespace Log
     {
         time_t ctime_;               // 日志产生时间
         Log::Loglevel::value level_; // 日志等级
-        std::thread::id tid_;         // 线程id
+        std::thread::id tid_;        // 线程id
         size_t line_;                // 源文件行号
         std::string file_;           // 源文件名称
         std::string payload_;        // 有效载荷
@@ -39,5 +38,3 @@ namespace Log
         }
     };
 }
-
-#endif

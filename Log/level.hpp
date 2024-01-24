@@ -2,8 +2,7 @@
     1、实现等级类
     2、实现一个接口，把等级转换成字符串
 */
-#ifndef __M_LEVEL_H__
-#define __M_LEVEL_H__
+#pragma once
 
 namespace Log
 {
@@ -42,5 +41,3 @@ namespace Log
         }
     };
 }
-
-#endif

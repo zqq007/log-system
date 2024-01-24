@@ -1,5 +1,4 @@
-#ifndef __M_FMT_H__
-#define __M_FMT_H__
+#pragma once
 
 #include "message.hpp"
 #include <memory>
@@ -7,6 +6,7 @@
 #include <vector>
 #include <cassert>
 #include <sstream>
+#include <cstdlib>
 
 namespace Log
 {
@@ -15,14 +15,14 @@ namespace Log
     {
     public:
         using ptr = std::shared_ptr<Formatitem>;
-        virtual void format(std::ostream &out, Log::message &msg) = 0;
+        virtual void format(std::ostream &out, const Log::message &msg) = 0;
     };
     // 实现格式化子项的派生类：消息、等级、时间、文件名、行号、日志器名、线程id
 
     class MsgFormat : public Formatitem
     {
     public:
-        void format(std::ostream &out, Log::message &msg) override
+        void format(std::ostream &out, const Log::message &msg) override
         {
             out << msg.payload_;
         }
@@ -31,7 +31,7 @@ namespace Log
     class LevelFormat : public Formatitem
     {
     public:
-        void format(std::ostream &out, Log::message &msg) override
+        void format(std::ostream &out, const Log::message &msg) override
         {
             out << Log::Loglevel::toString(msg.level_);
         }
@@ -41,7 +41,7 @@ namespace Log
     {
     public:
         TimeFormat(const std::string timeformat = "%H:%M:%S") : timeformat_(timeformat) {}
-        void format(std::ostream &out, Log::message &msg) override
+        void format(std::ostream &out, const Log::message &msg) override
         {
             struct tm t;
             localtime_r(&msg.ctime_, &t);
@@ -58,7 +58,7 @@ namespace Log
     class FileFormat : public Formatitem
     {
     public:
-        void format(std::ostream &out, Log::message &msg) override
+        void format(std::ostream &out, const Log::message &msg) override
         {
             out << msg.file_;
         }
@@ -67,7 +67,7 @@ namespace Log
     class LineFormat : public Formatitem
     {
     public:
-        void format(std::ostream &out, Log::message &msg) override
+        void format(std::ostream &out, const Log::message &msg) override
         {
             out << msg.line_;
         }
@@ -76,7 +76,7 @@ namespace Log
     class LoggerFormat : public Formatitem
     {
     public:
-        void format(std::ostream &out, Log::message &msg) override
+        void format(std::ostream &out, const Log::message &msg) override
         {
             out << msg.logger_;
         }
@@ -85,7 +85,7 @@ namespace Log
     class ThreadFormat : public Formatitem
     {
     public:
-        void format(std::ostream &out, Log::message &msg) override
+        void format(std::ostream &out, const Log::message &msg) override
         {
             out << msg.tid_;
         }
@@ -94,7 +94,7 @@ namespace Log
     class TabFormat : public Formatitem
     {
     public:
-        void format(std::ostream &out, Log::message &msg) override
+        void format(std::ostream &out, const Log::message &msg) override
         {
             out << "\t";
         }
@@ -103,7 +103,7 @@ namespace Log
     class NlineFormat : public Formatitem
     {
     public:
-        void format(std::ostream &out, Log::message &msg) override
+        void format(std::ostream &out, const Log::message &msg) override
         {
             out << "\n";
         }
@@ -113,7 +113,7 @@ namespace Log
     {
     public:
         OtherFormat(const std::string &str) : str_(str) {}
-        void format(std::ostream &out, Log::message &msg) override
+        void format(std::ostream &out, const Log::message &msg) override
         {
             out << str_;
         }
@@ -154,6 +154,7 @@ namespace Log
             return ss.str();
         }
 
+    private:
         bool parsePattern()
         {
             std::string key, val;
@@ -211,6 +212,12 @@ namespace Log
                 val.clear();
             }
 
+            // for (const auto &kv : fmt_order)
+            // {
+            //     std::cout << kv.first << " " << kv.second << std::endl;
+            // }
+            // std::cout << std::endl;
+
             // 根据解析得到的数据初始化格式子项数组成员
             for (auto &it : fmt_order)
             {
@@ -219,7 +226,6 @@ namespace Log
             return true;
         }
 
-    private:
         Formatitem::ptr createitem(std::string &key, std::string &value)
         {
             if (key == "d")
@@ -241,7 +247,13 @@ namespace Log
             else if (key == "n")
                 return std::make_shared<NlineFormat>();
             else
+            {
+                if (!key.empty())
+                    std::cout << "没有对应的%" << key << std::endl;
                 return std::make_shared<OtherFormat>(value);
+            }
+            // abort();
+            // return Formatitem::ptr();
         }
 
     private:
@@ -250,4 +262,3 @@ namespace Log
     };
 }
 
-#endif
