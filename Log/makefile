@@ -4,3 +4,4 @@ test:test.cpp
 .PHONY::clean
 clean:
 	rm -f test
+	rm -rf log

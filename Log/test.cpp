@@ -2,6 +2,7 @@
 #include "level.hpp"
 #include "message.hpp"
 #include "format.hpp"
+#include "sink.hpp"
 
 int main()
 {
@@ -17,7 +18,30 @@ int main()
     // std::cout << Log::loglevel::toString(Log::loglevel::value::OFF) << std::endl;
 
     Log::message msg(Log::Loglevel::value::INFO, __LINE__, __FILE__, "格式化功能测试...", "root");
-    Log::Formatter fmt("%g[%d{%H:%M:%S}][%f:%l][%t]%T%m%n");
-    std::cout << fmt.format(msg) << std::endl;
+    Log::Formatter fmt;
+    // std::cout << fmt.format(msg) << std::endl;
+
+    std::string str = fmt.format(msg);
+    // 标准输出
+    // Log::StdoutLogSink stdout_sink;
+    // stdout_sink.log(log.c_str(), log.size());
+    Log::LogSink::ptr stdout_ptr = Log::SinkFactory<Log::StdoutLogSink>::create();
+    stdout_ptr->log(str.c_str(), str.size());
+
+    // 指定文件
+    // Log::FileLogSink file_sink("./log/test.log");
+    // file_sink.log(log.c_str(), log.size());
+    Log::LogSink::ptr file_ptr = Log::SinkFactory<Log::FileLogSink, std::string>::create("./log/test.log");
+    file_ptr->log(str.c_str(), str.size());
+
+    // 滚动文件
+    // size_t cur = 0;
+    // size_t cnt = 0;
+    // Log::LogSink::ptr roll_ptr = Log::SinkFactory<Log::FileLogSink, std::string, int>::create("./log/test.log", 1024 * 1024);
+    // while (cur < 1024 * 1024 * 10)
+    // {
+    //     std::string res = str + cnt++;
+    //     roll_ptr->log(str.c_str(), str.size());
+    // }
     return 0;
 }
