@@ -55,6 +55,7 @@ namespace Log
         RollBySizeLogSink(const std::string &basename, const size_t max) : basename_(basename), max_size_(max), cur_size_(0)
         {
             std::string filename = createNewFile();
+            Log::File::createdirectory(Log::File::getFilePath(filename));
             ofs_.open(filename, std::ios::binary | std::ios::app);
             assert(ofs_.is_open());
         }
@@ -63,12 +64,14 @@ namespace Log
             if (cur_size_ + length >= max_size_)
             {
                 ofs_.close(); // 记得要关闭文件
+                cur_size_ = 0;
                 std::string newfilename = createNewFile();
                 ofs_.open(newfilename, std::ios::binary | std::ios::app);
                 assert(ofs_.is_open());
             }
             ofs_.write(data, length);
             assert(ofs_.good());
+            cur_size_ += length;
         }
 
     private:
@@ -85,6 +88,7 @@ namespace Log
             filename << lt.tm_hour;
             filename << lt.tm_min;
             filename << lt.tm_sec;
+            filename << "-" << filename_cnt_++;
             filename << ".log";
 
             return filename.str();
@@ -94,14 +98,15 @@ namespace Log
         // 创建文件时以基础文件名+时间命名；
         std::string basename_; // 基础文件名
         std::ofstream ofs_;
-        size_t max_size_; // 文件最大的存储空间
-        size_t cur_size_; // 记录当前文件大小
+        size_t max_size_;     // 文件最大的存储空间
+        size_t cur_size_;     // 记录当前文件大小
+        size_t filename_cnt_; // 防止文件写入过快导致写到同一个文件中
     };
 
-    template <typename sinktype, typename... Args>
     class SinkFactory
     {
     public:
+        template <typename sinktype, typename... Args>
         static LogSink::ptr create(Args &&...args)
         {
             return std::make_shared<sinktype>(std::forward<Args>(args)...);

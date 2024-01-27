@@ -25,23 +25,25 @@ int main()
     // 标准输出
     // Log::StdoutLogSink stdout_sink;
     // stdout_sink.log(log.c_str(), log.size());
-    Log::LogSink::ptr stdout_ptr = Log::SinkFactory<Log::StdoutLogSink>::create();
+    // Log::LogSink::ptr stdout_ptr = Log::SinkFactory<Log::StdoutLogSink>::create();
+    Log::LogSink::ptr stdout_ptr = Log::SinkFactory::create<Log::StdoutLogSink>();
     stdout_ptr->log(str.c_str(), str.size());
 
     // 指定文件
     // Log::FileLogSink file_sink("./log/test.log");
     // file_sink.log(log.c_str(), log.size());
-    Log::LogSink::ptr file_ptr = Log::SinkFactory<Log::FileLogSink, std::string>::create("./log/test.log");
+    Log::LogSink::ptr file_ptr = Log::SinkFactory::create<Log::FileLogSink>("./log/test.log");
     file_ptr->log(str.c_str(), str.size());
 
     // 滚动文件
-    // size_t cur = 0;
-    // size_t cnt = 0;
-    // Log::LogSink::ptr roll_ptr = Log::SinkFactory<Log::FileLogSink, std::string, int>::create("./log/test.log", 1024 * 1024);
-    // while (cur < 1024 * 1024 * 10)
-    // {
-    //     std::string res = str + cnt++;
-    //     roll_ptr->log(str.c_str(), str.size());
-    // }
+    size_t cur = 0;
+    size_t cnt = 0;
+    Log::LogSink::ptr roll_ptr = Log::SinkFactory::create<Log::RollBySizeLogSink>("./log/test-", 1024 * 1024);
+    while (cur < 1024 * 1024 * 10)
+    {
+        // std::string res = str + std::to_string(cnt++);
+        roll_ptr->log(str.c_str(), str.size());
+        cur += str.size();
+    }
     return 0;
 }
