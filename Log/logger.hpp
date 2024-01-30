@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Util.hpp"
+#include "util.hpp"
 #include "message.hpp"
 #include "sink.hpp"
 #include "level.hpp"
@@ -22,7 +22,7 @@ namespace Log
     {
     public:
         using ptr = std::shared_ptr<Logger>;
-        Logger(const std::string &Logger_name, Loglevel::value &limit_lv, Formatter::ptr formatter, std::vector<LogSink::ptr> sinks)
+        Logger(const std::string &Logger_name, Loglevel::value &limit_lv, const Formatter::ptr &formatter, std::vector<LogSink::ptr> sinks)
             : Logger_name_(Logger_name), limit_lv_(limit_lv), formatter_(formatter), sinks_(sinks) {}
 
         /*
@@ -126,7 +126,7 @@ namespace Log
     protected:
         void Serialization(Loglevel::value lv, const std::string &filename, size_t line, char *str)
         {
-            message msg(Loglevel::value::DEBUG, line, filename, str, Logger_name_);
+            message msg(lv, line, filename, str, Logger_name_);
 
             std::string res = formatter_->format(msg);
 
@@ -146,7 +146,7 @@ namespace Log
     class SyncLogger : public Logger
     {
     public:
-        SyncLogger(const std::string &Logger_name, Loglevel::value &limit_lv, Formatter::ptr formatter, std::vector<LogSink::ptr> sinks)
+        SyncLogger(const std::string &Logger_name, Loglevel::value &limit_lv, const Formatter::ptr &formatter, std::vector<LogSink::ptr> sinks)
             : Logger(Logger_name, limit_lv, formatter, sinks)
         {
         }
@@ -158,6 +158,65 @@ namespace Log
             {
                 sink->log(data, length);
             }
+        }
+    };
+
+    /*
+    由于创建一个日志器需要先把这个日志器所需要的参数先创建出来，再传参创建日志器对象，比较麻烦，于是，采用建造者模式
+    */
+    enum struct LoggerType
+    {
+        LOGGER_SYNC,
+        LOGGER_ASYNC
+    };
+
+    class LoggerBuilder
+    {
+    public:
+        LoggerBuilder() : logger_type_(LoggerType::LOGGER_SYNC), limit_lv_(Loglevel::value::DEBUG) {}
+        void buildLoggerType(LoggerType logger_type) { logger_type_ = logger_type; }
+        void buildLoggerName(const std::string &Logger_name) { Logger_name_ = Logger_name; }
+        void buildLoggerLevel(Loglevel::value limit_lv) { limit_lv_ = limit_lv; }
+        void buildFormatter(const std::string &pattern)
+        {
+            formatter_ = std::make_shared<Formatter>(pattern);
+        }
+        template <typename sinktype, typename... Args>
+        void buildSinks(Args &&...args)
+        {
+            LogSink::ptr sinks = SinkFactory::create<sinktype>(std::forward<Args>(args)...);
+            sinks_.push_back(sinks);
+        }
+
+        virtual Logger::ptr build() = 0;
+
+    protected:
+        LoggerType logger_type_;
+        std::string Logger_name_;
+        std::vector<LogSink::ptr> sinks_;
+        Loglevel::value limit_lv_;
+        Formatter::ptr formatter_;
+    };
+
+    class LocalLoggerBuilder : public LoggerBuilder
+    {
+    public:
+        Logger::ptr build() override
+        {
+            assert(!Logger_name_.empty()); // 日志器名字必须要有
+            if (!formatter_)               // 如果格式化对象指针为空
+            {
+                formatter_ = std::make_shared<Formatter>();
+            }
+            if (sinks_.empty())
+            {
+                LogSink::ptr sinks = SinkFactory::create<StdoutLogSink>();
+                sinks_.push_back(sinks);
+            }
+            if (logger_type_ == LoggerType::LOGGER_ASYNC)
+            {
+            }
+            return std::make_shared<SyncLogger>(Logger_name_, limit_lv_, formatter_, sinks_);
         }
     };
 }

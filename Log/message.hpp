@@ -16,7 +16,7 @@
 #include <string>
 #include <thread>
 #include "level.hpp"
-#include "Util.hpp"
+#include "util.hpp"
 
 namespace Log
 {

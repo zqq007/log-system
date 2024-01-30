@@ -1,8 +1,9 @@
-#include "Util.hpp"
+#include "util.hpp"
 #include "level.hpp"
 #include "message.hpp"
 #include "format.hpp"
 #include "sink.hpp"
+#include "logger.hpp"
 #include <unistd.h>
 
 enum struct TimeGap
@@ -99,11 +100,11 @@ int main()
     // std::cout << Log::loglevel::toString(Log::loglevel::value::ERROR) << std::endl;
     // std::cout << Log::loglevel::toString(Log::loglevel::value::OFF) << std::endl;
 
-    Log::message msg(Log::Loglevel::value::INFO, __LINE__, __FILE__, "格式化功能测试...", "root");
-    Log::Formatter fmt;
+    // Log::message msg(Log::Loglevel::value::INFO, __LINE__, __FILE__, "格式化功能测试...", "root");
+    // Log::Formatter fmt;
     // std::cout << fmt.format(msg) << std::endl;
 
-    std::string str = fmt.format(msg);
+    // std::string str = fmt.format(msg);
     // 标准输出
     // Log::StdoutLogSink stdout_sink;
     // stdout_sink.log(log.c_str(), log.size());
@@ -128,12 +129,48 @@ int main()
     //     cur += str.size();
     // }
 
-    Log::LogSink::ptr roll = Log::SinkFactory::create<RollByTimeSink>("./log/test-", TimeGap::GAP_SECOND);
-    time_t old = Log::Date::now();
-    while (Log::Date::now() < old + 5)
+    // Log::LogSink::ptr roll = Log::SinkFactory::create<RollByTimeSink>("./log/test-", TimeGap::GAP_SECOND);
+    // time_t old = Log::Date::now();
+    // while (Log::Date::now() < old + 5)
+    // {
+    //     roll->log(str.c_str(), str.size());
+    //     usleep(1000);
+    // }
+
+    // std::string logger_name = "synclogger";
+    // Log::Loglevel::value limit_lv = Log::Loglevel::value::WARN;
+    // Log::Formatter::ptr fmt(std::make_shared<Log::Formatter>("[%d{%H:%M:%S}][%t][%c][%f:%l][%p]%T%m%n"));
+    // /*下面这种定义方式不行，因为在logger类中的成员Formatter::ptr formatter_ 是一个智能指针类型，如果是传值，释放时会发生错误*/
+    // // Log::Formatter::ptr fmt;
+    // Log::LogSink::ptr stdout_ptr = Log::SinkFactory::create<Log::StdoutLogSink>();
+    // Log::LogSink::ptr file_ptr = Log::SinkFactory::create<Log::FileLogSink>("./log/test.log");
+    // Log::LogSink::ptr roll_ptr = Log::SinkFactory::create<Log::RollBySizeLogSink>("./log/test-", 1024 * 1024);
+    // std::vector<Log::LogSink::ptr> sinks{stdout_ptr, file_ptr, roll_ptr};
+    // Log::Logger::ptr logger = std::make_shared<Log::SyncLogger>(logger_name, limit_lv, fmt, sinks);
+
+    std::unique_ptr<Log::LoggerBuilder> builder(new Log::LocalLoggerBuilder());
+    builder->buildLoggerType(Log::LoggerType::LOGGER_SYNC);
+    builder->buildLoggerName("synclogger");
+    builder->buildLoggerLevel(Log::Loglevel::value::WARN);
+    builder->buildFormatter("%m%n");
+    builder->buildSinks<Log::StdoutLogSink>();
+    builder->buildSinks<Log::FileLogSink>("./log/test.log");
+    Log::Logger::ptr logger = builder->build();
+
+    logger->debug(__FILE__, __LINE__, "%s", "测试...");
+    logger->info(__FILE__, __LINE__, "%s", "测试...");
+    logger->warn(__FILE__, __LINE__, "%s", "测试...");
+    logger->error(__FILE__, __LINE__, "%s", "测试...");
+    logger->fatal(__FILE__, __LINE__, "%s", "测试...");
+
+    size_t cur_size = 0, cnt = 0;
+    while (cur_size < 1024 * 1024 * 10)
     {
-        roll->log(str.c_str(), str.size());
-        usleep(1000);
+        std::stringstream res;
+        res << __FILE__ << __LINE__;
+        res << "测试-" << cnt;
+        logger->fatal(__FILE__, __LINE__, "测试-%d", cnt++);
+        cur_size += res.str().size();
     }
     return 0;
 }
