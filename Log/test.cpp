@@ -4,6 +4,7 @@
 #include "format.hpp"
 #include "sink.hpp"
 #include "logger.hpp"
+#include "buffer.hpp"
 #include <unistd.h>
 
 enum struct TimeGap
@@ -148,29 +149,68 @@ int main()
     // std::vector<Log::LogSink::ptr> sinks{stdout_ptr, file_ptr, roll_ptr};
     // Log::Logger::ptr logger = std::make_shared<Log::SyncLogger>(logger_name, limit_lv, fmt, sinks);
 
-    std::unique_ptr<Log::LoggerBuilder> builder(new Log::LocalLoggerBuilder());
-    builder->buildLoggerType(Log::LoggerType::LOGGER_SYNC);
-    builder->buildLoggerName("synclogger");
-    builder->buildLoggerLevel(Log::Loglevel::value::WARN);
-    builder->buildFormatter("%m%n");
-    builder->buildSinks<Log::StdoutLogSink>();
-    builder->buildSinks<Log::FileLogSink>("./log/test.log");
-    Log::Logger::ptr logger = builder->build();
+    // std::unique_ptr<Log::LoggerBuilder> builder(new Log::LocalLoggerBuilder());
+    // builder->buildLoggerType(Log::LoggerType::LOGGER_SYNC);
+    // builder->buildLoggerName("synclogger");
+    // builder->buildLoggerLevel(Log::Loglevel::value::WARN);
+    // builder->buildFormatter("%m%n");
+    // builder->buildSinks<Log::StdoutLogSink>();
+    // builder->buildSinks<Log::FileLogSink>("./log/test.log");
+    // Log::Logger::ptr logger = builder->build();
 
-    logger->debug(__FILE__, __LINE__, "%s", "测试...");
-    logger->info(__FILE__, __LINE__, "%s", "测试...");
-    logger->warn(__FILE__, __LINE__, "%s", "测试...");
-    logger->error(__FILE__, __LINE__, "%s", "测试...");
-    logger->fatal(__FILE__, __LINE__, "%s", "测试...");
+    // logger->debug(__FILE__, __LINE__, "%s", "测试...");
+    // logger->info(__FILE__, __LINE__, "%s", "测试...");
+    // logger->warn(__FILE__, __LINE__, "%s", "测试...");
+    // logger->error(__FILE__, __LINE__, "%s", "测试...");
+    // logger->fatal(__FILE__, __LINE__, "%s", "测试...");
 
-    size_t cur_size = 0, cnt = 0;
-    while (cur_size < 1024 * 1024 * 10)
+    // size_t cur_size = 0, cnt = 0;
+    // while (cur_size < 1024 * 1024 * 10)
+    // {
+    //     std::stringstream res;
+    //     res << __FILE__ << __LINE__;
+    //     res << "测试-" << cnt;
+    //     logger->fatal(__FILE__, __LINE__, "测试-%d", cnt++);
+    //     cur_size += res.str().size();
+    // }
+
+    std::ifstream ifs("./log/test.log", std::ios::binary);
+    if (!ifs.is_open())
+        return -1;
+    ifs.seekg(0, std::ios::end);
+    size_t fsize = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
+    std::string body;
+    body.resize(fsize);
+    ifs.read(&body[0], fsize);
+    if (!ifs.good())
     {
-        std::stringstream res;
-        res << __FILE__ << __LINE__;
-        res << "测试-" << cnt;
-        logger->fatal(__FILE__, __LINE__, "测试-%d", cnt++);
-        cur_size += res.str().size();
+        std::cerr << "read error\n";
+        return -1;
     }
+    ifs.close();
+
+    std::cout << fsize << std::endl;
+
+    Log::Buffer buffer;
+    for (int i = 0; i < body.size(); ++i)
+    {
+        buffer.push(&body[i], 1);
+    }
+    // if (!buffer.empty())
+    //     buffer.print();
+    std::cout << buffer.read_data_size() << std::endl;
+
+    std::ofstream ofs("./log/temp.log", std::ios::binary);
+    if (!ofs.is_open())
+        return -1;
+
+    size_t rsize = buffer.read_data_size();
+    for (int i = 0; i < rsize; ++i)
+    {
+        ofs.write(buffer.begin(), 1);
+        buffer.movereadidx(1);
+    }
+    ofs.close();
     return 0;
 }
