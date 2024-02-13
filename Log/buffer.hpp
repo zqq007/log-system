@@ -37,13 +37,13 @@ namespace Log
         }
 
         /*返回可读数据长度*/
-        size_t read_data_size()
+        size_t readAblesize()
         {
             return write_idx_ - read_idx_;
         }
 
         /*返回可写数据长度*/
-        size_t write_data_size()
+        size_t writeAblesize()
         {
             /*这个函数仅针对固定缓冲区提供，因为如果采用扩容的方式，那么就不存在缓冲区空间不够的情况*/
             return (buffer_.size() - write_idx_);
@@ -52,7 +52,7 @@ namespace Log
         /*对读指针向后偏移*/
         void movereadidx(size_t length)
         {
-            assert(length <= read_data_size());
+            assert(length <= readAblesize());
             read_idx_ += length;
         }
 
@@ -90,13 +90,13 @@ namespace Log
         /*进行扩容*/
         void ensureEnoughSize(size_t len)
         {
-            if (len > write_data_size())
+            if (len > writeAblesize())
             {
                 size_t new_len = 0;
                 if (len < THRESHOLD_SIZE)
-                    new_len = buffer_.size() * 2 + len;/*如果在指定大小之内，翻倍增长，+len是防止len过大，扩容之后还是小于len的情况*/
+                    new_len = buffer_.size() * 2 + len; /*如果在指定大小之内，翻倍增长，+len是防止len过大，扩容之后还是小于len的情况*/
                 else
-                    new_len = buffer_.size() + INCREMENT_SIZE + len;/*超出指定大小，采用线性增长*/
+                    new_len = buffer_.size() + INCREMENT_SIZE + len; /*超出指定大小，采用线性增长*/
                 buffer_.resize(new_len);
             }
         }
