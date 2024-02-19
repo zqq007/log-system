@@ -10,6 +10,7 @@
 #include <mutex>
 #include <vector>
 #include <cstdarg>
+#include <unordered_map>
 
 /*
 日志器模块
@@ -25,6 +26,8 @@ namespace Log
         using ptr = std::shared_ptr<Logger>;
         Logger(const std::string &Logger_name, Loglevel::value &limit_lv, const Formatter::ptr &formatter, std::vector<LogSink::ptr> sinks)
             : Logger_name_(Logger_name), limit_lv_(limit_lv), formatter_(formatter), sinks_(sinks) {}
+
+        const std::string &getLoggerName() { return Logger_name_; }
 
         /*
         完成日志消息对象构造过程并进行格式化，得到格式化后的日志消息字符串，再进行实际落地方式
@@ -241,7 +244,7 @@ namespace Log
         Logger::ptr build() override
         {
             assert(!Logger_name_.empty()); // 日志器名字必须要有
-            if (!formatter_)               // 如果格式化对象指针为空
+            if (!formatter_.get())         // 如果格式化对象指针为空
             {
                 formatter_ = std::make_shared<Formatter>();
             }
@@ -255,6 +258,92 @@ namespace Log
                 return std::make_shared<AsyncLogger>(Logger_name_, limit_lv_, formatter_, sinks_, looper_type_);
             }
             return std::make_shared<SyncLogger>(Logger_name_, limit_lv_, formatter_, sinks_);
+        }
+    };
+
+    class LoggerManager
+    {
+    public:
+        static LoggerManager &getinstance()
+        {
+            static LoggerManager eton;
+            return eton;
+        }
+
+        void addLogger(Logger::ptr logger)
+        {
+            if (hasLogger(logger->getLoggerName()))
+                return;
+            std::unique_lock<std::mutex> lock(mutex_);
+            loggers_.insert(std::make_pair(logger->getLoggerName(), logger));
+        }
+
+        bool hasLogger(const std::string &logger_name)
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            for (auto &kv : loggers_)
+            {
+                if (kv.first == logger_name)
+                    return true;
+            }
+            return false;
+        }
+
+        Logger::ptr getLogger(const std::string &logger_name)
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            auto it = loggers_.find(logger_name);
+            if (it == loggers_.end())
+                return Logger::ptr();
+            else
+                return it->second;
+        }
+
+        Logger::ptr rootLogger()
+        {
+            return root_logger_;
+        }
+
+    private:
+        LoggerManager()
+        {
+            std::unique_ptr<Log::LoggerBuilder> builder(new Log::LocalLoggerBuilder());
+            builder->buildLoggerName("root");
+            root_logger_ = builder->build();
+            loggers_.insert(std::make_pair("root", root_logger_));
+        }
+
+    private:
+        std::mutex mutex_;
+        Logger::ptr root_logger_;
+        std::unordered_map<std::string, Logger::ptr> loggers_;
+    };
+
+    //
+    class GlobalLoggerBuilder : public LoggerBuilder
+    {
+    public:
+        Logger::ptr build() override
+        {
+            assert(!Logger_name_.empty()); // 日志器名字必须要有
+            if (!formatter_.get())         // 如果格式化对象指针为空
+            {
+                formatter_ = std::make_shared<Formatter>();
+            }
+            if (sinks_.empty())
+            {
+                LogSink::ptr sinks = SinkFactory::create<StdoutLogSink>();
+                sinks_.push_back(sinks);
+            }
+            Logger::ptr logger;
+            if (logger_type_ == LoggerType::LOGGER_ASYNC)
+            {
+                logger = std::make_shared<AsyncLogger>(Logger_name_, limit_lv_, formatter_, sinks_, looper_type_);
+            }
+            else
+                logger = std::make_shared<SyncLogger>(Logger_name_, limit_lv_, formatter_, sinks_);
+            LoggerManager::getinstance().addLogger(logger);
+            return logger;
         }
     };
 }

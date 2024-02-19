@@ -49,12 +49,16 @@ namespace Log
     private:
         void threadEntry() // 线程入口函数
         {
-            while (!stop_)
+            while (true)
             {
                 {
                     std::unique_lock<std::mutex> lock(mutex_);
+                    /*缓冲区没数据，并且工作器停止标志为真则退出*/
+                    if (stop_ && producer_.empty())
+                        break;
                     cond_con_.wait(lock, [&]()
                                    { return stop_ || !producer_.empty(); });
+
                     // 确认有数据，则交换
                     consumer_.swap(producer_);
                     // 唤醒消费者线程
