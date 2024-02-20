@@ -20,9 +20,9 @@ void test_log()
     size_t cnt = 0;
     while (cnt < 500000)
     {
-        std::stringstream res;
-        res << __FILE__ << __LINE__;
-        res << "测试-" << cnt;
+        // std::stringstream res;
+        // res << __FILE__ << __LINE__;
+        // res << "测试-" << cnt;
         logger->fatal(__FILE__, __LINE__, "测试-%d", cnt++);
         // cur_size += res.str().size();
     }
@@ -158,9 +158,10 @@ int main()
     builder->buildLoggerName("asynclogger");
     builder->buildLoggerLevel(Log::Loglevel::value::WARN);
     builder->buildFormatter("[%c]%m%n");
-    builder->buildEnableUnSafeAsync();
+    // builder->buildEnableUnSafeAsync();
     builder->buildSinks<Log::StdoutLogSink>();
     builder->buildSinks<Log::FileLogSink>("./log/async.log");
+    builder->buildSinks<Log::RollBySizeLogSink>("./log/roll-by-", 1024 * 1024);
     builder->build();
 
     test_log();

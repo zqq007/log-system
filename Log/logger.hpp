@@ -223,8 +223,8 @@ namespace Log
         template <typename sinktype, typename... Args>
         void buildSinks(Args &&...args)
         {
-            LogSink::ptr sinks = SinkFactory::create<sinktype>(std::forward<Args>(args)...);
-            sinks_.push_back(sinks);
+            LogSink::ptr sink = SinkFactory::create<sinktype>(std::forward<Args>(args)...);
+            sinks_.push_back(sink);
         }
 
         virtual Logger::ptr build() = 0;
