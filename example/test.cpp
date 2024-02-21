@@ -1,31 +1,25 @@
-#include "../Log/util.hpp"
-#include "../Log/level.hpp"
-#include "../Log/message.hpp"
-#include "../Log/format.hpp"
-#include "../Log/sink.hpp"
-#include "../Log/logger.hpp"
-#include "../Log/buffer.hpp"
+#include "../log/log.h"
 #include <unistd.h>
 
 void test_log()
 {
     Log::Logger::ptr logger = Log::LoggerManager::getinstance().getLogger("asynclogger");
 
-    logger->debug(__FILE__, __LINE__, "%s", "测试...");
-    logger->info(__FILE__, __LINE__, "%s", "测试...");
-    logger->warn(__FILE__, __LINE__, "%s", "测试...");
-    logger->error(__FILE__, __LINE__, "%s", "测试...");
-    logger->fatal(__FILE__, __LINE__, "%s", "测试...");
+    logger->debug("%s", "测试...");
+    logger->info("%s", "测试...");
+    logger->warn("%s", "测试...");
+    logger->error("%s", "测试...");
+    logger->fatal("%s", "测试...");
 
-    size_t cnt = 0;
-    while (cnt < 500000)
-    {
-        // std::stringstream res;
-        // res << __FILE__ << __LINE__;
-        // res << "测试-" << cnt;
-        logger->fatal(__FILE__, __LINE__, "测试-%d", cnt++);
-        // cur_size += res.str().size();
-    }
+    // size_t cnt = 0;
+    // while (cnt < 500000)
+    // {
+    //     // std::stringstream res;
+    //     // res << __FILE__ << __LINE__;
+    //     // res << "测试-" << cnt;
+    //     logger->fatal("测试-%d", cnt++);
+    //     // cur_size += res.str().size();
+    // }
 }
 
 int main()
@@ -157,11 +151,11 @@ int main()
     builder->buildLoggerType(Log::LoggerType::LOGGER_ASYNC);
     builder->buildLoggerName("asynclogger");
     builder->buildLoggerLevel(Log::Loglevel::value::WARN);
-    builder->buildFormatter("[%c]%m%n");
+    builder->buildFormatter("[%c][%f:%l][%p]%m%n");
     // builder->buildEnableUnSafeAsync();
     builder->buildSinks<Log::StdoutLogSink>();
-    builder->buildSinks<Log::FileLogSink>("./log/async.log");
-    builder->buildSinks<Log::RollBySizeLogSink>("./log/roll-by-", 1024 * 1024);
+    builder->buildSinks<Log::FileLogSink>("./logfile/async.log");
+    builder->buildSinks<Log::RollBySizeLogSink>("./logfile/roll-by-", 1024 * 1024);
     builder->build();
 
     test_log();

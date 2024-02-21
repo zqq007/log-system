@@ -1,9 +1,9 @@
-#include "../Log/log.h"
+#include "../log/log.h"
 
 void test_log1(const std::string &name)
 {
     Log::Logger::ptr logger = Log::LoggerManager::getinstance().getLogger(name);
-    logger->info("%s", "测试开始");
+    Log::INFO("%s", "测试开始");
 
     logger->debug("%s", "测试...");
     logger->info("%s", "测试...");
@@ -23,7 +23,7 @@ void test_log1(const std::string &name)
     //     logger->fatal("测试日志-%d", cnt++);
     // }
 
-    logger->info("%s", "测试完毕");
+    Log::INFO("%s", "测试完毕");
 }
 
 void test_log2()
@@ -50,16 +50,16 @@ void test_log2()
 int main()
 {
     std::unique_ptr<Log::LoggerBuilder> builder(new Log::GlobalLoggerBuilder());
-    builder->buildLoggerType(Log::LoggerType::LOGGER_ASYNC);
-    builder->buildLoggerName("asynclogger");
-    builder->buildLoggerLevel(Log::Loglevel::value::WARN);
+    builder->buildLoggerType(Log::LoggerType::LOGGER_SYNC);
+    builder->buildLoggerName("synclogger");
+    builder->buildLoggerLevel(Log::Loglevel::value::DEBUG);
     builder->buildFormatter("[%c][%f:%l]%m%n");
     builder->buildEnableUnSafeAsync();
     builder->buildSinks<Log::StdoutLogSink>();
-    builder->buildSinks<Log::FileLogSink>("./log/async.log");
+    builder->buildSinks<Log::FileLogSink>("./logfile/sync.log");
     builder->build();
 
-    test_log1("asynclogger");
+    test_log1("synclogger");
     // test_log2();
     return 0;
 }

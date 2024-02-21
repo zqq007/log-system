@@ -1,10 +1,10 @@
-#include "../Log/util.hpp"
-#include "../Log/level.hpp"
-#include "../Log/message.hpp"
-#include "../Log/format.hpp"
-#include "../Log/sink.hpp"
-#include "../Log/logger.hpp"
-#include "../Log/buffer.hpp"
+#include "../log/util.hpp"
+#include "../log/level.hpp"
+#include "../log/message.hpp"
+#include "../log/format.hpp"
+#include "../log/sink.hpp"
+#include "../log/logger.hpp"
+#include "../log/buffer.hpp"
 #include <unistd.h>
 
 enum struct TimeGap
@@ -87,3 +87,48 @@ private:
     size_t cur_gap_;
     size_t gap_size_;
 };
+
+void test_log()
+{
+    Log::Logger::ptr logger = Log::LoggerManager::getinstance().getLogger("asynclogger");
+
+    logger->debug(__FILE__, __LINE__, "%s", "测试...");
+    logger->info(__FILE__, __LINE__, "%s", "测试...");
+    logger->warn(__FILE__, __LINE__, "%s", "测试...");
+    logger->error(__FILE__, __LINE__, "%s", "测试...");
+    logger->fatal(__FILE__, __LINE__, "%s", "测试...");
+
+    // size_t cnt = 0;
+    // while (cnt < 500000)
+    // {
+    //     // std::stringstream res;
+    //     // res << __FILE__ << __LINE__;
+    //     // res << "测试-" << cnt;
+    //     logger->fatal(__FILE__, __LINE__, "测试-%d", cnt++);
+    //     // cur_size += res.str().size();
+    // }
+}
+
+int main()
+{
+    std::unique_ptr<Log::LoggerBuilder> builder(new Log::GlobalLoggerBuilder());
+    builder->buildLoggerType(Log::LoggerType::LOGGER_ASYNC);
+    builder->buildLoggerName("asynclogger");
+    builder->buildLoggerLevel(Log::Loglevel::value::WARN);
+    builder->buildFormatter("[%c]%m%n");
+    // builder->buildEnableUnSafeAsync();
+    builder->buildSinks<RollByTimeSink>("./logfile/roll-by-time-", TimeGap::GAP_SECOND);
+    Log::Logger::ptr logger = builder->build();
+
+    // test_log();
+
+    size_t cur = Log::Date::now();
+    while (Log::Date::now() < cur + 5)
+    {
+        logger->fatal(__FILE__, __LINE__, "this is test log");
+        // usleep(10000);
+        sleep(1);
+    }
+
+    return 0;
+}
