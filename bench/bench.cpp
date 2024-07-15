@@ -84,8 +84,8 @@ void async_bench()
     builder->buildSinks<Log::FileLogSink>("./logfile/async.log");
     builder->build();
 
-    bench("asynclogger", 1, 1000000, 100);
-    // bench("asynclogger", 3, 1000000, 100);
+    // bench("asynclogger", 1, 1000000, 100);
+    bench("asynclogger", 3, 1000000, 100);
 }
 
 int main()

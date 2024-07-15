@@ -206,7 +206,7 @@ namespace Log
                         std::cout << "{}匹配失败";
                         return false;
                     }
-                    pos++;
+                    pos++;//继续向后匹配
                 }
                 fmt_order.push_back(std::make_pair(key, val));
                 key.clear();
